@@ -4,8 +4,10 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/logan-waite/bootdev_pokedex/internal/pokecache"
 	"io"
 	"net/http"
+	"time"
 )
 
 var BASE_URL = "https://pokeapi.co/api/v2"
@@ -17,13 +19,6 @@ type paginator struct {
 }
 
 var locationPaginator = paginator{}
-
-func initLocationPaginator() {
-	locationPaginator = paginator{
-		next:     "",
-		previous: "",
-	}
-}
 
 // Named Api Resource
 type NamedApiResource struct {
@@ -38,6 +33,34 @@ type NamedApiResourceList struct {
 	Results  []NamedApiResource `json:"results"`
 }
 
+// Caching
+var apiCache = pokecache.NewCache(10 * time.Second)
+
+func cachedGet(url string) ([]byte, error) {
+	var data []byte
+	if val, exists := apiCache.Get(url); exists {
+		fmt.Println("hitting cache")
+		data = val
+	} else {
+		fmt.Println("hitting api")
+		res, err := http.Get(url)
+		if err != nil {
+			return nil, errors.New("error getting location-areas from PokeAPI")
+		}
+		defer res.Body.Close()
+
+		val, err := io.ReadAll(res.Body)
+		if err != nil {
+			return nil, errors.New("error reading data from response body")
+		}
+
+		data = val
+		apiCache.Add(url, data)
+	}
+
+	return data, nil
+}
+
 func GetLocationAreas(paginate string) ([]NamedApiResource, error) {
 	url := BASE_URL + "/location-area/"
 	if paginate == "next" && locationPaginator != (paginator{}) {
@@ -50,21 +73,15 @@ func GetLocationAreas(paginate string) ([]NamedApiResource, error) {
 		}
 	}
 
-	res, err := http.Get(url)
+	data, err := cachedGet(url)
 	if err != nil {
-		return nil, errors.New("error getting location-areas from PokeAPI")
-	}
-	defer res.Body.Close()
-
-	data, err := io.ReadAll(res.Body)
-	if err != nil {
-		return nil, errors.New("error reading data from response body")
+		return nil, err
 	}
 
 	var locations NamedApiResourceList
 	err = json.Unmarshal(data, &locations)
 	if err != nil {
-		return nil, errors.New("unable to parse location-areas JSON")
+		return nil, errors.New("unable to parse location-area JSON")
 	}
 
 	locationPaginator.next = locations.Next
