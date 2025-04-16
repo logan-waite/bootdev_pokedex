@@ -21,7 +21,7 @@ func main() {
 			if command, ok := commands[input[0]]; ok {
 				err := command.callback()
 				if err != nil {
-					fmt.Printf("Error when calling %s: ", err)
+					fmt.Printf("Error when calling %s: %v\n", command.name, err)
 				}
 			} else {
 				fmt.Println("Unknown command")

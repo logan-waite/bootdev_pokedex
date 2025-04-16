@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"github.com/logan-waite/bootdev_pokedex/internal/pokeapi"
 	"os"
 )
 
@@ -26,6 +27,16 @@ func initCommands() {
 			description: "Displays a help message",
 			callback:    commandHelp,
 		},
+		"map": {
+			name:        "map",
+			description: "List the next 20 locations in the database",
+			callback:    commandMap,
+		},
+		"mapb": {
+			name:        "mapb",
+			description: "list the previous 20 locations in the database",
+			callback:    commandMapb,
+		},
 	}
 }
 
@@ -44,5 +55,27 @@ func commandHelp() error {
 		fmt.Printf("%s: %s\n", command.name, command.description)
 	}
 	fmt.Print("\n")
+	return nil
+}
+
+func commandMap() error {
+	result, err := pokeapi.GetLocationAreas("next")
+	if err != nil {
+		return err
+	}
+	for _, location := range result {
+		fmt.Println(location.Name)
+	}
+	return nil
+}
+
+func commandMapb() error {
+	result, err := pokeapi.GetLocationAreas("prev")
+	if err != nil {
+		return err
+	}
+	for _, location := range result {
+		fmt.Println(location.Name)
+	}
 	return nil
 }
