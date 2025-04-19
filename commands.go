@@ -61,6 +61,16 @@ func initCommands() {
 			description: "attempt to catch a pokemon (catch <pokemon name>)",
 			callback:    commandCatch,
 		},
+		"inspect": {
+			name:        "inspect",
+			description: "view the characteristics of a pokemon you have caught (inspect <pokemon name>)",
+			callback:    commandInspect,
+		},
+		"pokedex": {
+			name:        "pokedex",
+			description: "view a list of all collected pokemon",
+			callback:    commandPokedex,
+		},
 	}
 }
 
@@ -119,7 +129,7 @@ func commandExplore(locationArg string) error {
 }
 
 func commandCatch(pokemonArg string) error {
-	fmt.Printf("Throwing a Pokeball at %s\n", pokemonArg)
+	fmt.Printf("Throwing a Pokeball at %s...\n", pokemonArg)
 	if pokemonArg == "" {
 		return fmt.Errorf("need a pokemon to catch!")
 	}
@@ -129,12 +139,39 @@ func commandCatch(pokemonArg string) error {
 	}
 	target := pokemon.BaseExperience - (25 + (pokemon.BaseExperience / 10))
 	attempt := rand.IntN(pokemon.BaseExperience)
-	fmt.Printf("%v >= %v (out of %v)\n", attempt, target, pokemon.BaseExperience)
 	if attempt >= target {
 		fmt.Printf("%s was caught!\n", pokemon.Name)
 		pokemonList[pokemon.Name] = pokemon
 	} else {
 		fmt.Printf("%s escaped!\n", pokemon.Name)
+	}
+	return nil
+}
+
+func commandInspect(pokemonArg string) error {
+	pokemon, ok := pokemonList[pokemonArg]
+	if !ok {
+		return fmt.Errorf("you have not caught a %v yet", pokemonArg)
+	}
+
+	fmt.Printf("Name: %v\n", pokemon.Name)
+	fmt.Printf("Height: %v\n", pokemon.Height)
+	fmt.Printf("Weight: %v\n", pokemon.Weight)
+	fmt.Println("Stats:")
+	for _, stat := range pokemon.Stats {
+		fmt.Printf("- %v: %v\n", stat.Stat.Name, stat.BaseStat)
+	}
+	fmt.Println("Types:")
+	for _, pokemonType := range pokemon.Types {
+		fmt.Printf("- %v\n", pokemonType.Type.Name)
+	}
+
+	return nil
+}
+
+func commandPokedex(_ string) error {
+	for key := range pokemonList {
+		fmt.Printf("- %v\n", key)
 	}
 	return nil
 }
