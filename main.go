@@ -7,7 +7,7 @@ import (
 )
 
 func main() {
-	initCommands()
+	initPokedex()
 
 	scanner := bufio.NewScanner(os.Stdin)
 
@@ -18,8 +18,18 @@ func main() {
 			_input := scanner.Text()
 			input := cleanInput(_input)
 
-			if command, ok := commands[input[0]]; ok {
-				err := command.callback()
+			cmd, arg := "", ""
+			if len(input) > 0 {
+				cmd = input[0]
+			}
+			if len(input) > 1 {
+				arg = input[1]
+			}
+
+			if cmd == "" {
+				continue
+			} else if command, ok := commands[cmd]; ok {
+				err := command.callback(arg)
 				if err != nil {
 					fmt.Printf("Error when calling %s: %v\n", command.name, err)
 				}
